@@ -1,5 +1,3 @@
-FILE 2/8 — server.js
-
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
