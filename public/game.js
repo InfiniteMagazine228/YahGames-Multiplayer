@@ -1,5 +1,3 @@
-FILE 5/8 — public/game.js
-
 const socket = io();
 
 const canvas = document.getElementById("game");
