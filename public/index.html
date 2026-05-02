@@ -1,166 +1,142 @@
-<!-- FILE 3: public/index.html -->
 <!doctype html>
 <html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Plumber Quest Online</title>
+<title>Plumber Quest Online V2</title>
 
 <style>
 *{box-sizing:border-box}
 body{
 margin:0;
-font-family:Arial,Helvetica,sans-serif;
-background:linear-gradient(180deg,#0ea5e9,#082f49);
-color:#fff;
-overflow-x:hidden;
-}
-header{
-padding:14px;
+font-family:Arial;
 background:#0f172a;
+color:#fff;
+overflow:hidden;
+}
+.topbar{
 display:flex;
 justify-content:space-between;
 align-items:center;
-gap:10px;
-flex-wrap:wrap;
+padding:10px 16px;
+background:#111827;
 }
-.logo{font-size:28px;font-weight:900}
+.topbar h1{
+margin:0;
+font-size:28px;
+color:#38bdf8;
+}
 .wrap{
-max-width:1300px;
-margin:auto;
-padding:15px;
 display:grid;
-grid-template-columns:1fr 340px;
-gap:16px;
-}
-.card{
-background:#0f172aee;
-border-radius:20px;
-padding:16px;
-box-shadow:0 12px 35px rgba(0,0,0,.35);
+grid-template-columns:1fr 300px;
+gap:12px;
+padding:12px;
+height:calc(100vh - 60px);
 }
 canvas{
 width:100%;
-max-width:100%;
-background:#38bdf8;
-border-radius:18px;
+height:100%;
+background:linear-gradient(#38bdf8,#2563eb);
+border-radius:20px;
 display:block;
-image-rendering:pixelated;
 }
-h2,h3{margin-top:0}
-input,button,select{
-width:100%;
+.side{
+background:#1e293b;
+border-radius:20px;
+padding:15px;
+overflow:auto;
+}
+.card{
+background:#0f172a;
 padding:12px;
+border-radius:14px;
+margin-bottom:10px;
+}
+input,select,button{
+width:100%;
+padding:10px;
 margin-top:8px;
 border:0;
-border-radius:12px;
-font-size:15px;
+border-radius:10px;
+font-size:16px;
 }
 button{
-cursor:pointer;
+background:#22c55e;
 font-weight:700;
+cursor:pointer;
 }
-.green{background:#22c55e}
-.blue{background:#38bdf8}
-.red{background:#ef4444;color:#fff}
-.yellow{background:#facc15}
-.purple{background:#a78bfa}
-.gray{background:#334155;color:#fff}
-.stat{
-background:#1e293b;
-padding:12px;
-border-radius:14px;
-margin-top:10px;
-}
-.small{font-size:13px;color:#cbd5e1}
-.skin{
-padding:10px;
-border-radius:14px;
-background:#1e293b;
-margin-top:8px;
-}
-footer{
-text-align:center;
-padding:30px;
-color:#cbd5e1;
-}
-a{color:#7dd3fc;text-decoration:none}
 .mobile{
-display:grid;
-grid-template-columns:1fr 1fr 1fr;
+position:fixed;
+left:0;right:0;bottom:10px;
+display:flex;
 gap:8px;
-margin-top:10px;
+padding:0 10px;
 }
+.mobile button{
+height:56px;
+font-size:24px;
+background:#334155;
+color:#fff;
+}
+.jump{background:#38bdf8!important}
 @media(max-width:900px){
 .wrap{grid-template-columns:1fr}
+.side{display:none}
 }
 </style>
 </head>
+
 <body>
 
-<header>
-<div class="logo">🍄 Plumber Quest Online</div>
-<div>
-<a href="about.html">About</a> |
-<a href="privacy.html">Privacy</a>
+<div class="topbar">
+<h1>🍄 Plumber Quest Online</h1>
+<div id="online">Online: 0</div>
 </div>
-</header>
 
 <div class="wrap">
 
-<!-- LEFT -->
+<canvas id="game" width="1280" height="720"></canvas>
+
+<div class="side">
+
 <div class="card">
-<canvas id="game" width="960" height="540"></canvas>
+Tên:
+<input id="name" value="Player">
+Skin:
+<select id="skin">
+<option value="classic">Classic Mario</option>
+<option value="gold">Gold Mario</option>
+<option value="ninja">Ninja Mario</option>
+<option value="frog">Frog Suit</option>
+</select>
+<button id="joinBtn">Vào Game</button>
+</div>
+
+<div class="card">
+<div>Coin: <span id="coin">0</span></div>
+<div>Điểm: <span id="score">0</span></div>
+</div>
+
+<div class="card">
+<h3>🏆 Leaderboard</h3>
+<div id="board"></div>
+</div>
+
+<div class="card">
+<a href="/about.html" style="color:#38bdf8">About</a><br>
+<a href="/privacy.html" style="color:#38bdf8">Privacy</a>
+</div>
+
+</div>
+</div>
 
 <div class="mobile">
-<button id="leftBtn" class="gray">⬅</button>
-<button id="jumpBtn" class="blue">⬆</button>
-<button id="rightBtn" class="gray">➡</button>
+<button id="left">⬅</button>
+<button id="jump" class="jump">⬆</button>
+<button id="right">➡</button>
 </div>
-</div>
-
-<!-- RIGHT -->
-<div class="card">
-
-<h2>👤 Tài khoản</h2>
-
-<input id="nameInput" placeholder="Tên người chơi">
-<button class="green" id="saveName">Lưu tên</button>
-
-<div class="stat">
-<div>🎯 Điểm: <b id="score">0</b></div>
-<div>🪙 Coin: <b id="coins">0</b></div>
-<div>👥 Online: <b id="online">1</b></div>
-</div>
-
-<h3>🎨 Skin nhân vật</h3>
-
-<div class="skin">🔴 Classic Mario <button class="red skinBtn" data-skin="classic">Dùng</button></div>
-<div class="skin">🟡 Gold Mario <button class="yellow skinBtn" data-skin="gold">Dùng</button></div>
-<div class="skin">⚫ Shadow Mario <button class="gray skinBtn" data-skin="shadow">Dùng</button></div>
-<div class="skin">🟢 Frog Suit <button class="green skinBtn" data-skin="frog">Dùng</button></div>
-<div class="skin">🔵 Ice Mario <button class="blue skinBtn" data-skin="ice">Dùng</button></div>
-<div class="skin">🟣 Galaxy Mario <button class="purple skinBtn" data-skin="galaxy">Dùng</button></div>
-
-<button class="green" id="submitScore">📈 Gửi điểm</button>
-
-<h3>🏆 Leaderboard</h3>
-<div id="leaderboard" class="small">Chưa có dữ liệu</div>
-
-<h3>💖 Ủng hộ</h3>
-<a href="https://paypal.me/HAThi247/1" target="_blank">
-<button class="yellow">Donate PayPal</button>
-</a>
-
-</div>
-</div>
-
-<footer>
-© 2026 Yah Games
-</footer>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="game.js"></script>
-
 </body>
 </html>
