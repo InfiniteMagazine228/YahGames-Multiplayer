@@ -1,3 +1,5 @@
+FILE 2/8 — server.js
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -8,68 +10,90 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
+const PORT = process.env.PORT || 3000;
+
+/* ===== DATA ===== */
 let players = {};
 let leaderboard = [];
 
-function topBoard(){
+/* ===== HELPERS ===== */
+function updateBoard() {
   leaderboard = Object.values(players)
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,10)
-    .map(p=>({
-      name:p.name,
-      score:p.score,
-      coins:p.coins,
-      skin:p.skin
-    }));
+    .map(p => ({
+      name: p.name,
+      score: p.score || 0,
+      coins: p.coins || 0,
+      skin: p.skin || "classic"
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
 }
 
-io.on("connection",(socket)=>{
+function publicPlayers() {
+  const out = {};
+  for (const id in players) {
+    out[id] = {
+      id,
+      name: players[id].name,
+      x: players[id].x,
+      y: players[id].y,
+      skin: players[id].skin,
+      score: players[id].score,
+      coins: players[id].coins
+    };
+  }
+  return out;
+}
 
-  players[socket.id] = {
-    id:socket.id,
-    name:"Player",
-    x:100,
-    y:420,
-    vx:0,
-    vy:0,
-    score:0,
-    coins:0,
-    skin:"classic",
-    online:true
-  };
-
+/* ===== SOCKET ===== */
+io.on("connection", socket => {
   socket.emit("you", socket.id);
 
-  socket.on("join",(data)=>{
-    if(data.name) players[socket.id].name = data.name.substring(0,16);
-    if(data.skin) players[socket.id].skin = data.skin;
+  players[socket.id] = {
+    id: socket.id,
+    name: "Player",
+    x: 120,
+    y: 500,
+    skin: "classic",
+    score: 0,
+    coins: 0
+  };
+
+  socket.on("join", data => {
+    if (!players[socket.id]) return;
+
+    players[socket.id].name =
+      String(data.name || "Player").substring(0, 16);
+
+    players[socket.id].skin =
+      data.skin || "classic";
   });
 
-  socket.on("move",(data)=>{
-    const p = players[socket.id];
-    if(!p) return;
+  socket.on("move", data => {
+    if (!players[socket.id]) return;
 
-    p.x = data.x;
-    p.y = data.y;
-    p.vx = data.vx || 0;
-    p.vy = data.vy || 0;
-    p.score = data.score || 0;
-    p.coins = data.coins || 0;
-    p.skin = data.skin || p.skin;
+    players[socket.id].x = data.x;
+    players[socket.id].y = data.y;
+    players[socket.id].score = data.score || 0;
+    players[socket.id].coins = data.coins || 0;
+    players[socket.id].skin = data.skin || "classic";
   });
 
-  socket.on("disconnect",()=>{
+  socket.on("disconnect", () => {
     delete players[socket.id];
   });
 });
 
-setInterval(()=>{
-  topBoard();
-  io.emit("state",{
-    players,
+/* ===== GAME LOOP ===== */
+setInterval(() => {
+  updateBoard();
+
+  io.emit("state", {
+    players: publicPlayers(),
     leaderboard
   });
-},50);
+}, 1000 / 20);
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT,()=>console.log("Running on "+PORT));
+server.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
