@@ -1,77 +1,75 @@
-// FILE 2: server.js
-
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+
 const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
+const server = http.createServer(app);
+const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-
-// public folder
 app.use(express.static("public"));
 
 let players = {};
 let leaderboard = [];
 
-// join
-io.on("connection", (socket) => {
-  console.log("User joined:", socket.id);
+function topBoard(){
+  leaderboard = Object.values(players)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,10)
+    .map(p=>({
+      name:p.name,
+      score:p.score,
+      coins:p.coins,
+      skin:p.skin
+    }));
+}
+
+io.on("connection",(socket)=>{
 
   players[socket.id] = {
-    id: socket.id,
-    name: "Player_" + socket.id.slice(0,4),
-    x: 120,
-    y: 380,
-    skin: "classic",
-    score: 0,
-    coins: 0
+    id:socket.id,
+    name:"Player",
+    x:100,
+    y:420,
+    vx:0,
+    vy:0,
+    score:0,
+    coins:0,
+    skin:"classic",
+    online:true
   };
 
-  socket.emit("currentPlayers", players);
-  socket.broadcast.emit("newPlayer", players[socket.id]);
+  socket.emit("you", socket.id);
 
-  // update player
-  socket.on("updatePlayer", (data) => {
-    if (!players[socket.id]) return;
-
-    players[socket.id] = {
-      ...players[socket.id],
-      ...data
-    };
-
-    io.emit("playersUpdate", players);
+  socket.on("join",(data)=>{
+    if(data.name) players[socket.id].name = data.name.substring(0,16);
+    if(data.skin) players[socket.id].skin = data.skin;
   });
 
-  // leaderboard
-  socket.on("submitScore", (score) => {
-    if (!players[socket.id]) return;
+  socket.on("move",(data)=>{
+    const p = players[socket.id];
+    if(!p) return;
 
-    leaderboard.push({
-      name: players[socket.id].name,
-      score: score
-    });
-
-    leaderboard.sort((a,b)=>b.score-a.score);
-    leaderboard = leaderboard.slice(0,10);
-
-    io.emit("leaderboardUpdate", leaderboard);
+    p.x = data.x;
+    p.y = data.y;
+    p.vx = data.vx || 0;
+    p.vy = data.vy || 0;
+    p.score = data.score || 0;
+    p.coins = data.coins || 0;
+    p.skin = data.skin || p.skin;
   });
 
-  // rename
-  socket.on("setName",(name)=>{
-    if(players[socket.id]){
-      players[socket.id].name = name.substring(0,15);
-    }
-  });
-
-  // disconnect
-  socket.on("disconnect", () => {
+  socket.on("disconnect",()=>{
     delete players[socket.id];
-    io.emit("playersUpdate", players);
-    console.log("User left:", socket.id);
   });
 });
 
-http.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+setInterval(()=>{
+  topBoard();
+  io.emit("state",{
+    players,
+    leaderboard
+  });
+},50);
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT,()=>console.log("Running on "+PORT));
