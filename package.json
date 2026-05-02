@@ -1,7 +1,7 @@
 {
-  "name": "plumber-quest-online",
-  "version": "1.0.0",
-  "description": "Plumber Quest Online Multiplayer",
+  "name": "plumber-quest-online-v2",
+  "version": "2.0.0",
+  "description": "Plumber Quest Online V2 - Multiplayer Platformer",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
